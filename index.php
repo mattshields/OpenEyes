@@ -6,7 +6,7 @@ $config=dirname(__FILE__).'/protected/config/main.php';
 $params=dirname(__FILE__).'/protected/config/params.php';
 
 // Default to live so stacktraces are not displayed with exceptions by default
-$environment = 'live';
+$environment = 'dev';
 
 foreach (@file($params) as $line) {
 	if (preg_match('/^[\s\t]+\'environment\'[\s\t]*=>[\s\t]*\'([a-z]+)\'/',$line,$m)) {
