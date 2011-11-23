@@ -62,6 +62,7 @@ http://www.openeyes.org.uk   info@openeyes.org.uk
 		<?php $this->widget('zii.widgets.CMenu',array(
 			'items'=>array(
 				array('label'=>'Home', 'url'=>array('/site/index')),
+                                array('label'=>'Patients', 'url'=>array('/admin/adminPatient/index')),
 				array('label'=>'Users', 'url'=>array('/admin/adminUser/index')),
 				array('label'=>'Firms', 'url'=>array('/admin/adminFirm/index')),
 				array('label'=>'Global phrases', 'url'=>array('/admin/adminPhrase/index')),

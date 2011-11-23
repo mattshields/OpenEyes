@@ -177,6 +177,8 @@ class Patient extends BaseActiveRecord
 
 	private function randomData($field)
 	{
+            return false; // TODO hack to stop the pseudonimsation
+            
 		if (!Yii::app()->params['pseudonymise_patient_details']) {
 			return false;
 		}
