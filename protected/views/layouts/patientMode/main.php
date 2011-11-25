@@ -54,7 +54,7 @@ http://www.openeyes.org.uk	 info@openeyes.org.uk
 				<div class="patientReminder">
 					<span class="given"><?php echo $this->model->first_name?></span>
 					<span class="surname"><?php echo $this->model->last_name?></span>
-					<span class="number"><?php echo $this->model->hos_num?></span>
+					<span class="number">Hospital number: <?php echo $this->model->hos_num?></span>
 				</div>
 			</div> <!-- #patientID -->
 
@@ -80,6 +80,7 @@ http://www.openeyes.org.uk	 info@openeyes.org.uk
 
 		</div> <!-- #content -->
 		<div id="help" class="clearfix">
+			<?php /*
 			<div class="hint">
 				<p><strong>Online Help</strong></p>
 				<p><a href="#">Quick Reference Guide</a></p>
@@ -88,6 +89,7 @@ http://www.openeyes.org.uk	 info@openeyes.org.uk
 				<p>Telephone: <?php echo Yii::app()->params['helpdesk_phone']?></p>
 				<p>Email: <a href="mailto:<?php echo Yii::app()->params['helpdesk_email']?>"><?php echo Yii::app()->params['helpdesk_email']?></a></p>
 			</div>
+			*/?>
 		</div>
 	</div>
 	<!--#container -->

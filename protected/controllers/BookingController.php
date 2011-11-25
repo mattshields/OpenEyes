@@ -66,9 +66,7 @@ class BookingController extends BaseController
 
 		$sessions = $operation->getSessions($firm->name == 'Emergency List');
 
-		$criteria = new CDbCriteria;
-		$criteria->order = 'name ASC';
-		$firmList = Firm::model()->findAll($criteria);
+		$firmList = Firm::model()->getListWithSpecialties();
 
 		$this->renderPartial('/booking/_schedule',
 			array('operation'=>$operation, 'date'=>$minDate,
@@ -106,9 +104,7 @@ class BookingController extends BaseController
 
 		$sessions = $operation->getSessions($firm->name == 'Emergency List');
 
-		$criteria = new CDbCriteria;
-		$criteria->order = 'name ASC';
-		$firmList = Firm::model()->findAll($criteria);
+		$firmList = Firm::model()->getListWithSpecialties();
 
 		$this->renderPartial('/booking/_reschedule',
 			array(
@@ -161,6 +157,7 @@ class BookingController extends BaseController
 			$cancel->element_operation_id = $operationId;
 			$cancel->cancelled_date = date('Y-m-d H:i:s');
 			$cancel->cancelled_reason_id = $_POST['cancellation_reason'];
+			$cancel->cancellation_comment = strip_tags($_POST['cancellation_comment']);
 			$cancel->user_id = Yii::app()->user->id;
 
 			$operation = ElementOperation::model()->findByPk($operationId);
@@ -408,6 +405,7 @@ class BookingController extends BaseController
 			$cancellation->cancelled_date = date('Y-m-d H:i:s');
 			$cancellation->user_id = Yii::app()->user->id;
 			$cancellation->cancelled_reason_id = $reason->id;
+			$cancellation->cancellation_comment = strip_tags($_POST['cancellation_comment']);
 
 			if ($cancellation->save()) {
 				if (!empty($_POST['Booking'])) {

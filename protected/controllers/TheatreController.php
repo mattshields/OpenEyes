@@ -19,7 +19,7 @@ class TheatreController extends BaseController
 	 * using two-column layout. See 'protected/views/layouts/column2.php'.
 	 */
 	public $layout='//layouts/main';
-
+ 
 	public function filters()
 	{
 		return array('accessControl');
@@ -38,17 +38,55 @@ class TheatreController extends BaseController
 		);
 	}
 
-	/**
-	 * Lists all models.
-	 */
 	public function actionIndex()
 	{
-		$this->render('index');
+		$firm = Firm::model()->findByPk($this->selectedFirmId);
+
+		if (empty($firm)) {
+			// No firm selected, reject
+			throw new CHttpException(403, 'You are not authorised to view this page without selecting a firm.');
+		}
+
+		$this->render('index', array('firm' => $firm));
 	}
 
 	public function actionPrintList()
 	{
-		$this->renderPartial('_print_list', array('theatres'=>$this->getTheatres()), false, true);
+		$pdf = new TheatrePDF;
+
+		$_POST = $_GET;
+
+		$previousSequenceId = false;
+
+		foreach ($this->getTheatres() as $name => $dates) {
+			foreach ($dates as $date => $sessions) {
+				foreach ($sessions as $session) {
+					if ($session['sequenceId'] != $previousSequenceId) {
+						$pdf->add_page(array(
+							'theatre_no' => $name,
+							'session' => substr($session['startTime'], 0, 5).' - '.substr($session['endTime'], 0, 5),
+							'surgical_firm' => empty($session['firm_name']) ? 'Emergency list' : $session['firm_name'],
+							'anaesthetist' => '', // todo: wtf
+							'date' => date('d M Y', strtotime($date))
+						));
+					}
+
+					if (!empty($session['patientId'])) {
+						$procedures = !empty($session['procedures']) ? '['.$session['eye'].'] '.$session['procedures'] : 'No procedures';
+
+						if ($session['operationComments']) {
+							$procedures .= "\n".$session['operationComments'];
+						}
+
+						$pdf->add_row($session['patientHosNum'], $session['patientName'], $session['patientAge'], $session['ward'], $session['anaesthetic'], $procedures, $session['admissionTime']);
+					}
+
+					$previousSequenceId = $session['sequenceId'];
+				}
+			}
+		}
+
+		$pdf->build();
 	}
 
 	public function actionSearch()
@@ -88,35 +126,12 @@ class TheatreController extends BaseController
 				$firmId = Yii::app()->session['selected_firm_id'];
 			}
 
-			switch($filter) {
-				case 'custom':
-					$startDate = $_POST['date-start'];
-					$endDate = $_POST['date-end'];
-					break;
-				case 'month':
-					$startDate = date('Y-m-01');
-					$endDate = date('Y-m-t');
-					break;
-				case 'week':
-					$thisWeekday = date('N');
-					$addDays = $thisWeekday - 1; // 1 == Monday
-					$startDate = date('Y-m-d', strtotime("-{$addDays} days"));
-					$addDays = 7 - $thisWeekday; // 7 == Sunday
-					$endDate = date('Y-m-d', strtotime("+{$addDays} days"));
-					break;
-				case 'today':
-					$startDate = date('Y-m-d');
-					$endDate = date('Y-m-d');
-				default: // show the next list for this firm if there is one, or today
-					if (empty($firmId)) {
-						$startDate = date('Y-m-d');
-						$endDate = date('Y-m-d');
-					} else {
-						$startDate = $service->getNextSessionDate($firmId);
-						$endDate = $startDate;
-					}
-
-					break;
+			if (empty($_POST['date-start']) || empty($_POST['date-end'])) {
+				$startDate = $service->getNextSessionDate($firmId);
+				$endDate = $startDate;
+			} else {
+				$startDate = $_POST['date-start'];
+																$endDate = $_POST['date-end'];
 			}
 
 			$data = $service->findTheatresAndSessions(
@@ -176,7 +191,8 @@ class TheatreController extends BaseController
 					'ward' => $values['ward'],
 					'displayOrder' => $values['display_order'],
 					'comments' => $values['session_comments'],
-					'operationDuration' => $values['operation_duration']
+					'operationDuration' => $values['operation_duration'],
+					'confirmed' => $values['confirmed']
 				);
 
 				if (empty($theatreTotals[$values['name']][$values['date']][$values['session_id']])) {
@@ -313,7 +329,7 @@ class TheatreController extends BaseController
 	}*/
 
 	public function actionMoveOperation()
-				{
+	{
 		if (Yii::app()->getRequest()->getIsAjaxRequest()) {
 			if (!empty($_POST['id'])) {
 				$operation = ElementOperation::model()->findByPk($_POST['id']);
@@ -329,7 +345,25 @@ class TheatreController extends BaseController
 		}
 
 		return false;
-				}
+	}
+
+        public function actionConfirmOperation()
+        {
+                if (Yii::app()->getRequest()->getIsAjaxRequest()) {
+                        if (!empty($_POST['id'])) {
+                                $operation = ElementOperation::model()->findByPk($_POST['id']);
+
+				$operation->booking->confirmed = 1;
+				$operation->booking->save();
+
+                                echo CJavaScript::jsonEncode(1);
+
+                                return true;
+                        }
+                }
+
+                return false;
+        }
 
 	/**
 	 * Helper method to fetch firms by specialty ID
@@ -353,6 +387,8 @@ class TheatreController extends BaseController
 		foreach ($data as $values) {
 			$firms[$values['id']] = $values['name'];
 		}
+
+		natcasesort($firms);
 
 		return $firms;
 	}

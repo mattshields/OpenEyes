@@ -46,10 +46,12 @@ if (empty($theatres)) {?>
 				if ($previousSequenceId != $session['sequenceId']) {
 					if ($previousSequenceId != '') {
 ?>
+						</tbody>
+						<tfoot>
 							<tr>
 								<th colspan="8" class="footer">Time unallocated: <span><?php echo $timeAvailable ?> min</span></th>
 							</tr>
-						</tbody>
+						</tfoot>
 					</table>
 				</div>
 <?php
@@ -65,7 +67,7 @@ if (empty($theatres)) {?>
 								<textarea style="display: none;" rows="2" style="width:245px;" name="comments<?php echo $session['sessionId'] ?>" id="comments<?php echo $session['sessionId'] ?>"><?php echo $session['comments'] ?></textarea>
 								<div id="comments_ro_<?php echo $session['sessionId']?>"><?php echo strip_tags($session['comments'])?></div>
 							</form>
-							<?/*<div class="modifyComments"><span class="edit"><a href="#" id="editComments<?php echo $session['sessionId'] ?>" name="<?php echo $session['sessionId'] ?>">Edit comment</a></span></div>*/?>
+							<?php /*<div class="modifyComments"><span class="edit"><a href="#" id="editComments<?php echo $session['sessionId'] ?>" name="<?php echo $session['sessionId'] ?>">Edit comment</a></span></div>*/?>
 						</div>
 
 					<table id="theatre_list">
@@ -99,7 +101,7 @@ if (empty($theatres)) {?>
 									'/patient/episodes/' . $session['patientId'] . '/event/' . $session['eventId']
 											);
 								?></td>
-								<td class="patient leftAlign"><?php echo $session['patientName'] . ' (' . $session['patientAge'] . ')'; ?></td>
+								<td class="patient leftAlign"><?php if (!$session['confirmed']) { ?><a href="#" id="confirm<?php echo $session['operationId'] ?>"><img src="img/_elements/btns/misc/confirm-icon.png" alt="confirm-icon" width="19" height="19" /></a><?php } ?><?php echo $session['patientName'] . ' (' . $session['patientAge'] . ')'; ?></td>
 								<td class="operation leftAlign"><?php echo !empty($session['procedures']) ? '['.$session['eye'].'] '.$session['procedures'] : 'No procedures'?></td>
 								<td class="anesthetic"><?php echo $session['anaesthetic'] ?></td>
 								<td class="ward"><?php echo $session['ward']; ?></td>
@@ -107,11 +109,11 @@ if (empty($theatres)) {?>
 								<?php
 					if ($session['patientGender'] == 'M') {
 ?>
-<img src="/img/_elements/icons/alerts/male.png" alt="male" width="17" height="17" />
+<img src="/img/_elements/icons/alerts/male.png" alt="male" title="male" width="17" height="17" />
 <?php
 					} else {
 ?>
-<img src="/img/_elements/icons/alerts/female.png" alt="female" width="17" height="17" />
+<img src="/img/_elements/icons/alerts/female.png" alt="female" title="female" width="17" height="17" />
 <?php
 					}
 
@@ -121,12 +123,18 @@ if (empty($theatres)) {?>
 					}
 
 					if (!empty($session['overnightStay'])) {
-							?><img src="/img/_elements/icons/alerts/overnight.png" alt="Overnight stay required" width="17" height="17" />
+							?><img src="/img/_elements/icons/alerts/overnight.png" alt="Overnight stay required" title="Overnight stay required" width="17" height="17" />
 <?php
 					}
 
 					if (!empty($session['consultantRequired'])) {
-							?><img src="/img/_elements/icons/alerts/consultant.png" alt="Consultant required" width="17" height="17" />
+							?><img src="/img/_elements/icons/alerts/consultant.png" alt="Consultant required" title="Consultant required" width="17" height="17" />
+<?php
+					}
+
+					if ($session['confirmed']) {
+?>
+							<img src="img/_elements/icons/alerts/confirmed.png" alt="confirmed" width="17" height="17" />
 <?php
 					}
 				}
@@ -156,46 +164,46 @@ if (empty($theatres)) {?>
 		value = $('#admitTime' + id).val();
 
 		$.ajax({
-					'url': '<?php echo Yii::app()->createUrl('theatre/updateAdmitTime'); ?>',
-					'type': 'POST',
-					'data': 'id=' + id + '&admission_time=' + value,
-					'success': function(data) {
+			'url': '<?php echo Yii::app()->createUrl('theatre/updateAdmitTime'); ?>',
+			'type': 'POST',
+			'data': 'id=' + id + '&admission_time=' + value,
+			'success': function(data) {
 				return false;
-					}
+			}
 		});
 
 		return false;
 	});
 
-				$('a[id^="editComments"]').click(function() {
-								id = this.name;
-								value = $('#comments' + this.name).val();
+	$('a[id^="editComments"]').click(function() {
+		id = this.name;
+		value = $('#comments' + this.name).val();
 
-								$.ajax({
-												'url': '<?php echo Yii::app()->createUrl('theatre/updateSessionComments'); ?>',
-												'type': 'POST',
-												'data': 'id=' + id + '&comments=' + value,
-												'success': function(data) {
-																return false;
-												}
-								});
+		$.ajax({
+			'url': '<?php echo Yii::app()->createUrl('theatre/updateSessionComments'); ?>',
+			'type': 'POST',
+			'data': 'id=' + id + '&comments=' + value,
+			'success': function(data) {
+				return false;
+			}
+		});
 
-								return false;
-				});
+		return false;
+	});
 
 	$('a[id^="u_"]').click(function() {
 		id = this.id.replace(/u_/i, "");
 
-					$.ajax({
-								'url': '<?php echo Yii::app()->createUrl('theatre/moveOperation'); ?>',
-								'type': 'POST',
-								'data': 'id=' + id + '&up=1',
-								'success': function(data) {
+		$.ajax({
+			'url': '<?php echo Yii::app()->createUrl('theatre/moveOperation'); ?>',
+			'type': 'POST',
+			'data': 'id=' + id + '&up=1',
+			'success': function(data) {
 				if (data == 1) {
 					$('#oprow_' + id).prev().before($('#oprow_' + id));
 				}
-								},
-					});
+			},
+		});
 
 		return false;
 	});
@@ -216,6 +224,31 @@ if (empty($theatres)) {?>
 
 		return false;
 	});
+
+        $('a[id^="confirm"]').click(function() {
+                id = this.id.replace(/confirm/i, "");
+
+		a = this;
+
+		parent = $(this).parent();
+
+		sibling = $(parent).siblings('.alerts');
+
+                $.ajax({
+                        'url': '<?php echo Yii::app()->createUrl('theatre/confirmOperation'); ?>',
+                        'type': 'POST',
+                        'data': 'id=' + id,
+                        'success': function(data) {
+                                if (data == 1) {
+					sibling.append('<img src="img/_elements/icons/alerts/confirmed.png" alt="confirmed" width="17" height="17" />');
+
+					$(a).remove();
+                                }
+                        },
+                });
+
+                return false;
+        });
 
 	function enable_sort() {
 		$("#theatre_list tbody").sortable({
